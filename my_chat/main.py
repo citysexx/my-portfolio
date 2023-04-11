@@ -1,7 +1,8 @@
-from typing import TextIO
 import datetime
-from friends import open_chats
-import os
+from basic_actions import *
+from tkinter import ttk
+
+window = ttk.Style()
 
 
 def welcome_menu():
@@ -23,59 +24,6 @@ def welcome_menu():
             else:
                 print('Enter a valid number of choice!')
     return login
-
-
-def password_check(password: str) -> bool:
-    flags = {
-        'len_str_8': False,
-        'capitals': False,
-        'numbers': False
-    }
-    nums = [
-        chr(index) for index in range(ord('0'), ord('9') + 1)
-    ]
-    if len(password) >= 8:
-        flags['len_str_8'] = True
-
-    for char in password:
-        if char in nums:
-            flags['numbers'] = True
-        if char == char.upper():
-            flags['capitals'] = True
-
-    return False not in flags.values()
-
-
-def generate_dict(file: TextIO) -> dict:
-    return {
-            line.split(':')[0]: line.split(':')[1].rstrip() for line in file
-        }
-
-
-def check_presence_of_user(login: str) -> bool:
-    with open('login.txt', 'r', encoding='utf-8') as login_data:
-        dict_data = generate_dict(login_data)
-        return login in dict_data.keys()
-
-
-def check_password_user(password: str) -> bool:
-    with open('login.txt', 'r', encoding='utf-8') as login_data:
-        dict_data = generate_dict(login_data)
-        return password in dict_data.values()
-
-
-def write_new_data(login: str, password: str):
-    with open('login.txt', 'a', encoding='utf-8') as login_write_data:
-        login_write_data.write(f'{login}:{password}\n')
-
-
-def blacklisted(login: str, mode: str):
-    if mode == 'r':
-        with open('ban_list.txt', mode, encoding='utf-8') as ban_check:
-            return ban_check.read().__contains__(login)
-    else:  # if mode == 'a'
-        with open('ban_list.txt', mode, encoding='utf-8') as ban_addition:
-            ban_addition.write(f"{login}\n")
 
 
 def ask_for_register():
@@ -120,54 +68,6 @@ def ask_for_login() -> tuple or bool:
         return False, None
 
 
-def add_friend(active_user, added_user):
-    with open('friends.py', 'w', encoding='utf-8') as friends_file:
-        if active_user not in open_chats.keys():
-            open_chats[active_user] = [added_user]
-            friends_file.write(f'open_chats = {str(open_chats)}\n')
-        elif check_presence_of_user(added_user) and \
-                added_user not in open_chats[active_user]:
-            open_chats[active_user].append(added_user)
-            friends_file.write(f'open_chats = {str(open_chats)}\n')
-        else:
-            print('Cannot add friend. Either he is already friends, or is '
-                  'not a user of our chat yet')
-
-
-def remove_friends(active_user):
-    with open('friends.py', 'w', encoding='utf-8') as friends_file:
-        active = True
-        while active:
-            friend = input('Who to delete? >>> ')
-            if check_presence_of_user(friend) \
-                    and friend in open_chats[active_user]:
-                open_chats[active_user].remove(friend)
-                friends_file.write(f'open_chats = {str(open_chats)}\n')
-            active = int(input('0-quit 1-continue >>> '))
-
-
-def settings(login_user: str):
-    print('Settings')
-    options = {1, 2, 3}
-    while True:
-        try:
-            action = int(input('1. Remove/ban friend\n'
-                               '2. Clear message history\n'
-                               '3. Log out\n>>> '))
-        except ValueError:
-            print('Invalid input!')
-        else:
-            if action in options:
-                if action == 1:
-                    remove_friends(login_user)
-                elif action == 2:
-                    print('You cannot clear public chats)')
-                else:
-                    exit(0)
-            else:
-                print('Incorrect option')
-
-
 def messenger(user_login: str):
 
     if user_login not in open_chats.keys():
@@ -183,7 +83,8 @@ def messenger(user_login: str):
                 print('No user found. Maybe he is not still with us? '
                       'Try typing something else')
 
-    while True:
+    returned = False
+    while not returned:
         print('Friends:')
         for index, friend in enumerate(open_chats[user_login]):
             print(f'{index + 1}. {friend}')
@@ -194,10 +95,11 @@ def messenger(user_login: str):
             for index, chat_name in enumerate(chats_roster):
                 chats_list_v.append(chat_name.rstrip())
                 print(f'{index + 1}. {chat_name.rstrip()}')
-
             while True:
+
                 prompt = input('Create a chat or '
                                'type /add to add friends.\n'
+                               '/back for back\n'
                                'Also /set for settings >>> ')
                 if prompt == '/add':
                     friend_to_add = input('Type a nickname >>> ')
@@ -205,9 +107,21 @@ def messenger(user_login: str):
                     break
                 elif prompt == '/set':
                     settings(user_login)
+                elif prompt == '/back':
+                    returned = True
+                    break
                 else:
                     if prompt in chats_list_v:
-                        print('Chat exists. Entering... ')
+                        if os.path.exists(os.path.join(os.path.abspath('chats'),
+                                                       prompt + '.txt')):
+                            print('Chat exists. Entering... ')
+                        elif os.path.exists(os.path.abspath('chats')):
+                            print('Some prick has deleted file, '
+                                  'but we initialized empty chat '
+                                  'with the same name')
+                        else:
+                            print('Some prick deleted the main folder chats, '
+                                  'but we anticipated it')
                     else:
                         print('Creating chat...')
                         with open('chats.txt', 'a', encoding='utf-8') \
@@ -217,7 +131,11 @@ def messenger(user_login: str):
 
 
 def chat(logged_user: str, chat_name: str):
+    if not os.path.exists(os.path.join(os.path.abspath('chats'),
+                                       chat_name + '.txt')):
+        os.mkdir('chats')
     path = os.path.join(os.path.abspath('chats'), chat_name + '.txt')
+
     with open(path, 'a', encoding='utf-8') as private_data:
         active = True
         while active:
@@ -227,18 +145,6 @@ def chat(logged_user: str, chat_name: str):
             else:
                 private_data.write(f'On {datetime.datetime.now().strftime("%d-%m-%Y %H:%M")}:'
                                    f' {logged_user} said: {msg}\n')
-
-
-def show_chat():
-    with open('chats.txt', 'r', encoding='utf-8') as chats_roster:
-        chat_pick = input('Enter chat: ')
-        if chats_roster.read().__contains__(chat_pick):
-            with open(os.path.join(os.path.abspath('chats'), chat_pick), 'r',
-                      encoding='utf-8') as correspondence:
-                for line in correspondence:
-                    print(line.rstrip())
-        else:
-            print('No such chat here. Maybe misprint?')
 
 
 if __name__ == '__main__':
