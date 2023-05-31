@@ -4,7 +4,7 @@ from os import path, startfile
 import customtkinter
 from PIL import Image, ImageTk
 import database
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, AnyStr, List
 import tkinter as tk
 from tkinter import messagebox
 from time import sleep
@@ -23,9 +23,11 @@ database.restore_files(file_name=file_name, dir_name=dir_name)
 
 # globals
 weekends_values: Dict[str, Any] = {}
-emps_dictionary = database.database_init()[0]
-shifts_dictionary = database.database_init()[1]
+emps_dictionary: Dict[AnyStr, List] = database.database_init()[0]
+shifts_dictionary: Dict[int, AnyStr] = database.database_init()[1]
+on_vals: 'database.CustomListDict' = database.CustomListDict()
 
+VERSION: str = database.fetch_version()
 USERS = users
 AUTHORIZED = False
 
@@ -47,7 +49,7 @@ class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         # define window size
-        self.title('Scheduler Bot v 1.0 release')
+        self.title(f'Scheduler Bot v. {VERSION}')
         self.iconbitmap(path.abspath('Sport-table-tennis.ico'))
         self.geometry("400x200")
         self.eval('tk::PlaceWindow . center')
@@ -489,40 +491,61 @@ class WeekendsWindow(customtkinter.CTkToplevel):
 
         self.schedule_layout = schedule.init_layout()
         self.schedule_layout.append(shift_gen.Cell(1, len(schedule.emps) + 1))
+        self.wm_attributes('-transparentcolor', '#ab23ff')
         for cell in schedule.init_layout():
             if cell.protected():
                 if cell.get_y() == 0:
-                    label = customtkinter.CTkLabel(master=self.weekends_upper_frame, text=cell.get_info(), width=32)
+                    label = customtkinter.CTkLabel(master=self.weekends_upper_frame,
+                                                   text=cell.get_info(), width=32,
+                                                   font=('Arial', 12))
                     label.grid(column=cell.get_x(), row=cell.get_y(), padx=2, pady=2)
                 else:
-                    label = customtkinter.CTkLabel(master=self.weekends_scrollable_frame, text=cell.get_info())
+                    label = customtkinter.CTkLabel(master=self.weekends_scrollable_frame,
+                                                   text=cell.get_info())
                     label.grid(column=cell.get_x(), row=cell.get_y(), padx=2, pady=2)
             else:
                 try:
                     if weekends_values[f'{cell.get_x()};{cell.get_y()}'].get() == "on":
                         check_var = customtkinter.StringVar(value="on")
+                        sign_var = ''
                     else:
                         check_var = customtkinter.StringVar(value="off")
+                        sign_var = f'{WEEK[0][cell.get_x() - 1]}'
                 except AttributeError:
                     if weekends_values[f'{cell.get_x()};{cell.get_y()}'] == 'on':
                         check_var = customtkinter.StringVar(value="on")
+                        sign_var = ''
                     else:
                         check_var = customtkinter.StringVar(value="off")
+                        sign_var = f'{WEEK[0][cell.get_x() - 1]}'
                 except KeyError:
                     check_var = customtkinter.StringVar(value="off")
+                    sign_var = f'{WEEK[0][cell.get_x() - 1]}'
 
                 tick = customtkinter.CTkCheckBox(master=self.weekends_scrollable_frame,
-                                                 text='',
+                                                 text=f'',
                                                  variable=check_var,
                                                  onvalue="on",
                                                  offvalue="off",
                                                  width=30,
                                                  command=lambda: mute_weekends(f'{cell.get_x()};{cell.get_y()}'))
+
+                tick_signing = customtkinter.CTkLabel(master=self.weekends_scrollable_frame,
+                                                      text=sign_var,
+                                                      fg_color='transparent',
+                                                      font=('Arial', 10),
+                                                      text_color='grey',
+                                                      height=15,
+                                                      width=15
+                                                      )
+
                 if cell.get_x() == 1 and cell.get_y() == len(schedule.emps) + 1:
                     pass
                 else:
                     tick.grid(column=cell.get_x(), row=cell.get_y(), padx=2, pady=2)
+                    tick_signing.place(in_=tick, relx=0.4, rely=0.7)
                 weekends_values[f'{cell.get_x()};{cell.get_y()}'] = tick
+
         self.btn_save = customtkinter.CTkButton(master=self,
                                                 text='Сохранить текущий расклад на неделю',
                                                 width=350,
@@ -915,6 +938,11 @@ def ensure_save() -> None:
     """
     are you sure to save?
     """
+    global on_vals
+    if any([len(list_of_on_vals) == 0 for list_of_on_vals in on_vals.values()]):
+        messagebox.showwarning(title='Предупреждение',
+                               message='У кого-то нет выходных. У каждого должен быть минимум один вых'
+                                       'Вы можете продолжить, проигнорировав это сообщение')
     context_window = EnsureSaveWindow()
     context_window.mainloop()
 
@@ -937,6 +965,25 @@ def mute_weekends(key: str) -> None:
     :return: None
     """
     global weekends_values
+    global on_vals
+    global emps_dictionary
+
+    # takes out a warning window that warns that you cannot put more than
+    # 2 weekends
+    on_vals = database.CustomListDict()
+    for coord, value in weekends_values.items():
+        if int(coord.split(';')[1]) != len(emps_dictionary) + 1:
+            on_vals[coord.split(';')[1]] = on_vals.get(coord.split(';')[1])
+            if value.get() == 'on':
+                on_vals[coord.split(';')[1]].append(value.get())
+        print(on_vals)
+        if any([len(list_of_on_vals) >= 3 for list_of_on_vals in on_vals.values()]):
+            weekends_values[key].deselect()
+            messagebox.showwarning(title='Предупреждение',
+                                   message='Нельзя ставить больше 2-х выходных. '
+                                           'Вы можете продолжить, проигнорировав это сообщение')
+            return
+
     if weekends_values[key].get() == 'off':
         weekends_values[key].select()
     if weekends_values[key].get() == 'on':

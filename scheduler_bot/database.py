@@ -214,3 +214,15 @@ def log(grid_list: list, weekday: int, remainders: list, employees: list) -> Non
             for item in remainders:
                 log_file.write(f'<action_on_{datetime.now().strftime("%m_%d_%Y_%H_%M_%S")}> '
                                f'shift_left={item.__str__()}\n')
+
+
+def fetch_version() -> AnyStr:
+    """
+    This function opens md file with version and returns the current
+    version of the program
+    """
+    with open('current_version.md', 'r', encoding='utf-8') as version_file:
+        for index, line in enumerate(version_file):
+            if index == 1:
+                version = line.rstrip()[2:]
+                return version
