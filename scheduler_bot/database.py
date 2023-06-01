@@ -12,14 +12,14 @@ WEEKDAY: int = curr_date.date(datetime.now()).weekday()
 
 def database_init() -> Tuple[Dict, CustomListDict]:
     """
-    This function accepts no arguments. It reads the shifts.txt and emps.txt.
+    This function accepts no arguments. It reads the default_shifts.txt and emps.txt.
     Then it converts this information to tuple of 2 dicts, the second dict is
     custom. See custom_list_dict.py for more information
     :return: Tuple[Dict, CustomListDict]
     """
     # init shifts with their time of begin, each key being the hour of begin,
     # each value being the list of shifts starting this time
-    with open('shifts.txt', 'r', encoding='utf-8') as shifts:
+    with open('default_shifts.txt', 'r', encoding='utf-8') as shifts:
         all_shifts = CustomListDict()
         for line in shifts:
             key = int(line.rstrip().split('-')[1])
@@ -35,6 +35,23 @@ def database_init() -> Tuple[Dict, CustomListDict]:
     }
 
     return emps_names, all_shifts
+
+
+def initialize_other_shifts(filename: AnyStr) -> 'CustomListDict':
+    """
+    Unlike the previous function, which initializes all the default shifts,
+    this function initializes all the default shifts plus those compiled by
+    user
+    """
+    with open(f'{filename}.txt', 'r', encoding='utf-8') as shifts:
+        all_shifts = CustomListDict()
+        for line in shifts:
+            key = int(line.rstrip().split('-')[1])
+            val = line.rstrip().split('-')[0]
+            all_shifts[key] = all_shifts.get(key)
+            all_shifts[key].append(val)
+
+    return all_shifts
 
 
 def grab_last_week_sunday(day: int, month: int) -> Tuple[int, int]:
@@ -226,3 +243,10 @@ def fetch_version() -> AnyStr:
             if index == 1:
                 version = line.rstrip()[2:]
                 return version
+
+
+def if_exists(folder: AnyStr) -> bool:
+    if not path.exists(path.join(curdir, folder)):
+        mkdir(folder)
+        return False
+    return True

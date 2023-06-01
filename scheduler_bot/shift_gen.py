@@ -5,6 +5,9 @@ from datetime import datetime
 from os import path, mkdir
 from openpyxl.styles import Font, Alignment
 from typing import List, Any, AnyStr, Tuple, NoReturn, Dict
+from statistics import mean
+import importlib
+from copy import deepcopy
 
 
 class Schedule:
@@ -152,11 +155,16 @@ class Schedule:
 
         return self.__grid
 
-    def generate_day(self, weekday: int) -> None:
+    def generate_day(self, weekday: int,
+                     config: AnyStr) -> None:
         """
         This method generates a schedule for the given weekday.
         Below in comments each action will be described
         :param weekday: int number from 1 to 7
+        :param config: None or name of the file to initialize from (str).
+        This config is user config.
+        If None, the usual shifts roster will be used. Otherwise,
+        list of single shifts + compiled shifts will be used
         :return: None
         """
 
@@ -165,8 +173,7 @@ class Schedule:
         if weekday == 1:
             database.clear_history()
 
-        # WITH WEEKENDS TEST FEATURE (Add random gen of weekends.
-        # Feature will be deleted when replaced by user input)
+        # weekends!
         addresses = []
         weekends_dir = 'holidays'
         weekends_file = f'holidays-{self.WEEK[0][0]}.'\
@@ -237,16 +244,39 @@ class Schedule:
         # they are shuffled in strict correspondence with cells' order
         shuffle(cells)
         employees = [self.emps[cell.get_y() - 1] for cell in cells]
+        # TODO при конфиге этот список короче 39 (33) БАГ решить!
         if prev_day_cells:
             prev_day_cells = [prev_day_cells[cell.get_y() - 1] for cell in cells]
-        shifts = self.__shifts[:]
-        shuffle(shifts)
+
+        # initialize dicts: single and compiled shifts. Do it from config param
+        try:
+            config_module = importlib.import_module(name=f'templates.{config}')
+        except ModuleNotFoundError:
+            config_module = None
+
+        if not config_module:
+            single_shifts, compiled_shifts = (deepcopy(self.__shifts_all), database.CustomListDict())
+        else:
+            single_shifts, compiled_shifts = config_module.unpack()
+
+        # convert dicts into appropriate lists of Shift instances
+        single_shifts_list: List['Shift'] = [
+            Shift(hour, name)
+            for hour, roster in single_shifts.items() for name in roster
+        ]
+        compiled_shifts_list: List['Shift'] = [
+            Shift(hour[0], name, hour[1])
+            for hour, roster in compiled_shifts.items() for name in roster
+        ]
+
+        shuffle(single_shifts_list),
+        shuffle(compiled_shifts_list)
 
         # this algorythm implements the generation method.
         # It would not stop unless all shifts are given away
         # (shifts list is empty).
-        while shifts:
-            compare_shifts = shifts[:]
+        while single_shifts_list:
+            compare_shifts = single_shifts_list[:]
             # shifts assignment process
             for cell, employee, yesterday_cell in zip(cells, employees, prev_day_cells):
                 if cell.get_y() in addresses and cell.get_y() != 0:
@@ -260,52 +290,65 @@ class Schedule:
                 else:
                     aligned_to_yesterday = False
                     yesterday_info_end = None
-                    for shift in shifts:
-                        try:
-                            candidate = cell.get_info() + shift
-                        except TypeError:
-                            candidate = shift
 
-                        try:
-                            yesterday_info_end = yesterday_cell.get_info().get_end()
-                        except AttributeError:
-                            pass
-                        else:
-                            aligned_to_yesterday = True
-                        if tables_suitable(candidate) \
-                                and candidate.get_begin() in employee.get_working_hours():
-                            if aligned_to_yesterday and yesterday_info_end - candidate.get_begin() <= 12:
-                                cell.rename(candidate)
-                                self.sheet[cell.holler_ident()] = cell.get_info().__str__()
-                                self.sheet[cell.holler_ident()].alignment = Alignment(
-                                    horizontal='center', vertical='center'
-                                )
-                                shifts.remove(shift)
-                                break
-                            elif aligned_to_yesterday:
-                                continue
+                    if compiled_shifts_list:
+                        compiled_choice = choice(compiled_shifts_list)
+                        cell.rename(compiled_choice)
+                        self.sheet[cell.holler_ident()] = cell.get_info().__str__()
+                        self.sheet[cell.holler_ident()].alignment = Alignment(
+                            horizontal='center', vertical='center'
+                        )
+                        self.sheet.column_dimensions[cell.holler_ident()[0]].width = 30
+                        compiled_shifts_list.remove(compiled_choice)
+                        continue
+
+                    for shift in single_shifts_list:
+                        if cell.get_info() in ['None', 'none'] or not cell.get_info().if_compiled():
+                            try:
+                                candidate = cell.get_info() + shift
+                            except TypeError:
+                                candidate = shift
+
+                            try:
+                                yesterday_info_end = yesterday_cell.get_info().get_end()
+                            except AttributeError:
+                                pass
                             else:
-                                cell.rename(candidate)
-                                self.sheet[cell.holler_ident()] = cell.get_info().__str__()
-                                self.sheet[cell.holler_ident()].alignment = Alignment(
-                                    horizontal='center', vertical='center'
-                                )
-                                shifts.remove(shift)
-                                break
+                                aligned_to_yesterday = True
+                            if tables_suitable(candidate) \
+                                    and candidate.get_begin() in employee.get_working_hours():
+                                if aligned_to_yesterday and yesterday_info_end - candidate.get_begin() <= 12:
+                                    cell.rename(candidate)
+                                    self.sheet[cell.holler_ident()] = cell.get_info().__str__()
+                                    self.sheet[cell.holler_ident()].alignment = Alignment(
+                                        horizontal='center', vertical='center'
+                                    )
+                                    single_shifts_list.remove(shift)
+                                    break
+                                elif aligned_to_yesterday:
+                                    continue
+                                else:
+                                    cell.rename(candidate)
+                                    self.sheet[cell.holler_ident()] = cell.get_info().__str__()
+                                    self.sheet[cell.holler_ident()].alignment = Alignment(
+                                        horizontal='center', vertical='center'
+                                    )
+                                    single_shifts_list.remove(shift)
+                                    break
             # the block below is responsible for comparing if shifts list has changed since last iteration.
             # if there is no change, the bot enters remainders into the Excel
-            if compare_shifts == shifts:
+            if compare_shifts == single_shifts_list:
                 self.sheet[choice(cells).holler_ident()[0] + str(len(self.emps) + 3)] = 'остатки'
                 self.sheet[choice(cells).holler_ident()[0] + str(len(self.emps) + 3)].alignment = Alignment(
                                     horizontal='center', vertical='center'
                                 )
-                for index, shift in enumerate(shifts):
+                for index, shift in enumerate(single_shifts_list):
                     self.sheet[choice(cells).holler_ident()[0] + str(len(self.emps) + index + 4)] = shift.__str__()
                     self.sheet[choice(cells).holler_ident()[0] + str(len(self.emps) + index + 4)].alignment = \
                         Alignment(
                                     horizontal='center', vertical='center'
                                 )
-                    shifts.remove(shift)
+                    single_shifts_list.remove(shift)
         # Once the generation is ended, the bot finishes job and writes a table
         if weekday == 7:
             file_name = f'schedule-{self.WEEK[0][0]}-{self.WEEK[0][6]} of {self.WEEK[1][0]} ' \
@@ -317,7 +360,7 @@ class Schedule:
                 path.join(path_to_file, file_name)
             )
 
-        database.log(grid_list=self.__grid, weekday=weekday, remainders=shifts, employees=self.emps)
+        database.log(grid_list=self.__grid, weekday=weekday, remainders=single_shifts_list, employees=self.emps)
 
 
 class Cell:
@@ -454,10 +497,15 @@ class Shift:
         get_begin, get_end, get_daytime, get_duration, get_city, eval_shift,
         describe, get_inst, rearrange_time
     """
-    def __init__(self, start_time: int,  name: str) -> None:
+    def __init__(self, start_time: int,  name: str, end_time=None) -> None:
         self.name: AnyStr = name
         self.start_time: int = start_time
-        self.end_time: int = start_time + 6
+        if not end_time:
+            self.end_time: int = start_time + 6
+            self.compiled_beforehand = False
+        else:
+            self.compiled_beforehand = True
+            self.end_time: int = end_time
 
     def __str__(self) -> AnyStr:
         """
@@ -541,25 +589,35 @@ class Shift:
 
         return cities
 
-    def eval_shift(self) -> int:
+    def eval_shift(self) -> float or int:
         """
         This method estimates how this shift valuable is and returns pts.
         """
-        if 'Саранск' in self.get_city():
-            return 10
-        elif 'Минск' in self.get_city() or 'Питер' in self.get_city():
-            return 7
-        elif 'Ростов' in self.get_city() or 'Польша польская' in self.get_city():
-            return 5
-        else:
-            return 3
+        scores = []
+        for city in self.get_city():
+            if city == 'Саранск':
+                scores.append(10)
+            elif city == 'Питер':
+                scores.append(8)
+            elif city == 'Минск':
+                scores.append(6)
+            elif city == 'Ростов':
+                scores.append(4)
+            elif city == 'Польша польская':
+                scores.append(2)
+            else:
+                scores.append(1)
+
+        return mean(scores)
 
     def describe(self):
-        print(f'Смена "{self.__str__()}" идет с {self.get_begin()} по '
-              f'{self.get_end() if self.get_end() <= 24 else self.get_end() - 24} часов, '
-              f'длится {self.get_duration()} часов. '
-              f'Время суток начала смены - {self.get_daytime()}'
-              f'; SHIFT - {self.get_inst()}')
+        return f'Название смены: "{self.__str__()}"\n'\
+               f'Время старта: {self.get_begin()} часов\n'\
+               f'Время финиша: {self.get_end()} часов\n'\
+               f'Длительность захода: {self.get_duration()} часов\n'\
+               f'Время суток начала смены: {self.get_daytime()}\n'\
+               f'Города: {", ".join(self.get_city())}\n'\
+               f'Рейтинг смены : {self.eval_shift()}/10'
 
     def get_inst(self) -> int:
         """
@@ -585,6 +643,12 @@ class Shift:
             end_time = self.get_end()
 
         return start_time, end_time
+
+    def if_compiled(self) -> bool:
+        """
+        getter to know if the shift is compiled
+        """
+        return self.compiled_beforehand
 
 
 class TwoTableShift(Shift):

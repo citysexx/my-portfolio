@@ -3,3 +3,5 @@ history
 gens
 holidays
 passwords.py
+templates
+generation_configs
