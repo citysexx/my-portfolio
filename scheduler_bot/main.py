@@ -38,7 +38,7 @@ on_vals: 'database.CustomListDict' = database.CustomListDict()
 generation_configuration: Dict[int, None or AnyStr] = {
     number: "Пусто" for number in range(1, 8)
 }
-config_name = None
+config_name = 'Без конфига'
 force_quit = False
 
 VERSION: str = database.fetch_version()
@@ -1324,6 +1324,7 @@ def mute_employees() -> None:
     with open('emps.txt', 'w', encoding='utf-8') as file_write:
         for key, value in emps_dictionary.items():
             file_write.write(f'{key}-{value[0]} {value[1]}\n')
+        file_write.flush()
 
 
 def mute_shifts() -> None:
@@ -1337,6 +1338,7 @@ def mute_shifts() -> None:
         for key, value in shifts_dictionary.items():
             for shift in value:
                 file_write.write(f'{shift}-{key}\n')
+            file_write.flush()
 
 
 def open_explorer_logs() -> None:
@@ -1377,6 +1379,7 @@ def save_weekends(context_window) -> None:
     with open(path.join(path.abspath('holidays'), file_name), 'w', encoding='utf-8') as file_weekends:
         for key, value in weekends_values.items():
             file_weekends.write(f'{key}:{value.get()}\n')
+            file_weekends.flush()
     context_window.destroy()
 
 
@@ -1660,6 +1663,7 @@ def save_compiled_templates(window: ['customtkinter.CTkToplevel']) -> None:
                        f'    operable = {shifts_operable_dictionary}\n'
                        f'    compiled = {compiled_shifts_dictionary}\n'
                        f'    return operable, compiled\n')
+    file_to_save.flush()
     file_to_save.close()
 
     window.destroy()
@@ -1759,6 +1763,7 @@ def save_configs(window: ['customtkinter.CTkToplevel'], list_of_configs: List['c
     file_to_save.write(f'def unpack():\n'
                        f'    config = {generation_configuration}\n'
                        f'    return config\n')
+    file_to_save.flush()
     config_name = file_to_save.name.split('/')[-1][0:-3]
     file_to_save.close()
 
