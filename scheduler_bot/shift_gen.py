@@ -244,7 +244,6 @@ class Schedule:
         # they are shuffled in strict correspondence with cells' order
         shuffle(cells)
         employees = [self.emps[cell.get_y() - 1] for cell in cells]
-        # TODO при конфиге этот список короче 39 (33) БАГ решить!
         if prev_day_cells:
             prev_day_cells = [prev_day_cells[cell.get_y() - 1] for cell in cells]
 
@@ -293,6 +292,8 @@ class Schedule:
 
                     if compiled_shifts_list:
                         compiled_choice = choice(compiled_shifts_list)
+                        if compiled_choice.get_begin() not in employee.get_working_hours():
+                            continue
                         cell.rename(compiled_choice)
                         self.sheet[cell.holler_ident()] = cell.get_info().__str__()
                         self.sheet[cell.holler_ident()].alignment = Alignment(
