@@ -66,16 +66,16 @@ class App(customtkinter.CTk):
         self.title(f'Scheduler Bot v. {VERSION}')
         self.iconbitmap(path.abspath('Sport-table-tennis.ico'))
         self.geometry("400x250")
-        self.eval('tk::PlaceWindow . center')
+        self.eval('tk::PlaceWindow . right')
 
         # define images
-        self.add_generation_image = ImageTk.PhotoImage(Image.open('genbot.png').resize((30, 30), Image.LANCZOS))
-        self.add_settings_image = ImageTk.PhotoImage(Image.open('settings.png').resize((30, 30), Image.LANCZOS))
-        self.add_employee_image = ImageTk.PhotoImage(Image.open('employee.png').resize((30, 30), Image.LANCZOS))
+        self.add_generation_image = ImageTk.PhotoImage(Image.open('genbot.png').resize((33, 33), Image.LANCZOS))
+        self.add_settings_image = ImageTk.PhotoImage(Image.open('settings.png').resize((25, 25), Image.LANCZOS))
+        self.add_employee_image = ImageTk.PhotoImage(Image.open('employee.png').resize((25, 25), Image.LANCZOS))
         self.add_shifts_image = ImageTk.PhotoImage(Image.open('schedule_shifts.png').resize((30, 30), Image.LANCZOS))
         self.add_history_image = ImageTk.PhotoImage(Image.open('history.png').resize((30, 30), Image.LANCZOS))
         self.add_folder_image = ImageTk.PhotoImage(Image.open('folder.png').resize((30, 30), Image.LANCZOS))
-        self.add_weekend_image = ImageTk.PhotoImage(Image.open('weekend.png').resize((30, 30), Image.LANCZOS))
+        self.add_weekend_image = ImageTk.PhotoImage(Image.open('weekend.png').resize((33, 33), Image.LANCZOS))
         self.compile_image = ImageTk.PhotoImage(Image.open('compiler_manual.png').resize((30, 30), Image.LANCZOS))
 
         # define buttons
@@ -358,8 +358,9 @@ class EmployeeWindow(customtkinter.CTkToplevel):
     def __init__(self):
         super().__init__()
         self.title('Редактировать сотрудников')
+        self.resizable(height=True, width=True)
         self.iconbitmap(path.abspath('Sport-table-tennis.ico'))
-        self.geometry("245x450")
+        self.geometry("365x540")
 
         self.addition_image = ImageTk.PhotoImage(Image.open('plus.png').resize((20, 20), Image.LANCZOS))
         self.subtraction_image = ImageTk.PhotoImage(Image.open('minus.png').resize((20, 20), Image.LANCZOS))
@@ -372,22 +373,22 @@ class EmployeeWindow(customtkinter.CTkToplevel):
                                                     fg_color='#1A1A1A')
         self.btn_add_employee = customtkinter.CTkButton(master=self.buttons_frame,
                                                         text='',
-                                                        width=20,
-                                                        height=20,
+                                                        width=30,
+                                                        height=30,
                                                         image=self.addition_image,
                                                         command=lambda: add(self.employees_listbox,
                                                                             window_belongs='employees'))
         self.btn_remove_employee = customtkinter.CTkButton(master=self.buttons_frame,
                                                            text='',
-                                                           width=20,
-                                                           height=20,
+                                                           width=30,
+                                                           height=30,
                                                            image=self.subtraction_image,
                                                            command=lambda: delete(self.employees_listbox,
                                                                                   window_belongs='employees'))
         self.btn_edit_employee = customtkinter.CTkButton(master=self.buttons_frame,
                                                          text='',
-                                                         width=20,
-                                                         height=20,
+                                                         width=30,
+                                                         height=30,
                                                          image=self.edition_image,
                                                          command=lambda: add(self.employees_listbox,
                                                                              window_belongs='employees',
@@ -398,6 +399,7 @@ class EmployeeWindow(customtkinter.CTkToplevel):
                                             highlightcolor='black',
                                             bg='#1A1A1A',
                                             foreground='grey',
+                                            font=('Arial', 12),
                                             width=40,
                                             height=25,
                                             highlightbackground='black',
@@ -424,7 +426,7 @@ class ShiftWindow(customtkinter.CTkToplevel):
         super().__init__()
         self.title('Редактировать столы')
         self.iconbitmap(path.abspath('Sport-table-tennis.ico'))
-        self.geometry("180x450")
+        self.geometry("365x540")
 
         self.addition_image = ImageTk.PhotoImage(Image.open('plus.png').resize((20, 20), Image.LANCZOS))
         self.subtraction_image = ImageTk.PhotoImage(Image.open('minus.png').resize((20, 20), Image.LANCZOS))
@@ -437,22 +439,22 @@ class ShiftWindow(customtkinter.CTkToplevel):
                                                     fg_color='#1A1A1A')
         self.btn_add_shift = customtkinter.CTkButton(master=self.buttons_frame,
                                                      text='',
-                                                     width=20,
-                                                     height=20,
+                                                     width=30,
+                                                     height=30,
                                                      image=self.addition_image,
                                                      command=lambda: add(self.shifts_listbox,
                                                                          window_belongs='shifts'))
         self.btn_remove_shift = customtkinter.CTkButton(master=self.buttons_frame,
                                                         text='',
-                                                        width=20,
-                                                        height=20,
+                                                        width=30,
+                                                        height=30,
                                                         image=self.subtraction_image,
                                                         command=lambda: delete(self.shifts_listbox,
                                                                                window_belongs='shifts'))
         self.btn_edit_shift = customtkinter.CTkButton(master=self.buttons_frame,
                                                       text='',
-                                                      width=20,
-                                                      height=20,
+                                                      width=30,
+                                                      height=30,
                                                       image=self.edition_image,
                                                       command=lambda: add(self.shifts_listbox,
                                                                           window_belongs='shifts',
@@ -463,7 +465,8 @@ class ShiftWindow(customtkinter.CTkToplevel):
                                          highlightcolor='black',
                                          bg='#1A1A1A',
                                          foreground='grey',
-                                         width=25,
+                                         font=('Arial', 12),
+                                         width=40,
                                          height=25,
                                          highlightbackground='black',
                                          highlightthickness=0)
@@ -610,20 +613,17 @@ class WeekendsWindow(customtkinter.CTkToplevel):
                 try:
                     if weekends_values[f'{cell.get_x()};{cell.get_y()}'].get() == "on":
                         check_var = customtkinter.StringVar(value="on")
-                        sign_var = ''
                     else:
                         check_var = customtkinter.StringVar(value="off")
-                        sign_var = f'{WEEK[0][cell.get_x() - 1]}'
+                    sign_var = f'{WEEK[0][cell.get_x() - 1]}'
                 except AttributeError:
                     if weekends_values[f'{cell.get_x()};{cell.get_y()}'] == 'on':
                         check_var = customtkinter.StringVar(value="on")
-                        sign_var = ''
                     else:
                         check_var = customtkinter.StringVar(value="off")
-                        sign_var = f'{WEEK[0][cell.get_x() - 1]}'
                 except KeyError:
                     check_var = customtkinter.StringVar(value="off")
-                    sign_var = f'{WEEK[0][cell.get_x() - 1]}'
+                sign_var = f'{WEEK[0][cell.get_x() - 1]}'
 
                 tick = customtkinter.CTkCheckBox(master=self.weekends_scrollable_frame,
                                                  text=f'',
@@ -715,7 +715,7 @@ class CompilerWindow(customtkinter.CTkToplevel):
         super().__init__()
         self.title('Компоновка смен')
         self.iconbitmap(path.abspath('Sport-table-tennis.ico'))
-        self.geometry("1140x400")
+        self.geometry("1350x500")
 
         # mark out layout
         self.suck_image = ImageTk.PhotoImage(Image.open('right_arrow.png').resize((20, 20), Image.LANCZOS))
@@ -773,9 +773,15 @@ class CompilerWindow(customtkinter.CTkToplevel):
                                                          fg_color='#1A1A1A',
                                                          )
 
-        self.left_frame_title = customtkinter.CTkLabel(master=self.left_frame, text='Доступные смены')
-        self.center_frame_title = customtkinter.CTkLabel(master=self.center_frame, text='Предварительно')
-        self.right_frame_title = customtkinter.CTkLabel(master=self.right_frame, text='Скомпилированные смены')
+        self.left_frame_title = customtkinter.CTkLabel(master=self.left_frame,
+                                                       text='Доступные смены',
+                                                       font=('Arial', 14, 'bold'))
+        self.center_frame_title = customtkinter.CTkLabel(master=self.center_frame,
+                                                         text='Предварительно',
+                                                         font=('Arial', 14, 'bold'))
+        self.right_frame_title = customtkinter.CTkLabel(master=self.right_frame,
+                                                        text='Скомпилированные смены',
+                                                        font=('Arial', 14, 'bold'))
 
         self.preview_entry = customtkinter.CTkEntry(master=self.center_middle_frame,
                                                     width=238,
@@ -863,6 +869,7 @@ class CompilerWindow(customtkinter.CTkToplevel):
                                          foreground='grey',
                                          width=50,
                                          height=21,
+                                         font=('Arial', 12),
                                          highlightbackground='black',
                                          highlightthickness=0)
         self.shifts_listbox.bind('<<ListboxSelect>>', func=self.change_color_of_add_button)
@@ -873,6 +880,7 @@ class CompilerWindow(customtkinter.CTkToplevel):
                                                   foreground='grey',
                                                   width=50,
                                                   height=21,
+                                                  font=('Arial', 12),
                                                   highlightbackground='black',
                                                   highlightthickness=0)
 
@@ -882,33 +890,33 @@ class CompilerWindow(customtkinter.CTkToplevel):
 
         # left frame
         self.left_frame.grid(row=0, column=0, pady=10, padx=10)
-        self.left_frame_title.grid(row=0, column=0, pady=5)
-        self.shifts_listbox.grid(row=1, column=0, pady=5)
+        self.left_frame_title.grid(row=0, column=0, pady=10)
+        self.shifts_listbox.grid(row=1, column=0, pady=10)
         # center frame
         self.center_frame.grid(row=0, column=1, pady=10, padx=10)
-        self.center_frame_title.grid(row=0, column=0, pady=5)
+        self.center_frame_title.grid(row=0, column=0, pady=10)
         # center upper
-        self.center_upper_frame.grid(row=1, column=0, pady=5)
-        self.btn_check_shift.grid(row=0, column=0, pady=5)
-        self.btn_shift_info.grid(row=1, column=0, pady=5)
+        self.center_upper_frame.grid(row=1, column=0, pady=10)
+        self.btn_check_shift.grid(row=0, column=0, pady=10)
+        self.btn_shift_info.grid(row=1, column=0, pady=10)
         # center middle
-        self.center_middle_frame.grid(row=2, column=0, pady=5)
+        self.center_middle_frame.grid(row=2, column=0, pady=10)
         self.btn_add_shift.grid(row=0, column=0, pady=10, padx=10)
-        self.preview_entry.grid(row=0, column=1, pady=10, padx=10)
+        self.preview_entry.grid(row=0, column=1, pady=15, padx=10)
         self.btn_push.grid(row=0, column=2, pady=10, padx=10)
         self.btn_pull.grid(row=1, column=2, pady=10, padx=10)
         self.pull_btn_title.grid(row=1, column=1, pady=10, padx=10)
         self.btn_remove_shift.grid(row=1, column=0, pady=10, padx=10)
         # center lower
-        self.center_lower_frame.grid(row=3, column=0, pady=5)
-        self.btn_load.grid(row=0, column=0, pady=5)
-        self.btn_save.grid(row=1, column=0, pady=5)
-        self.btn_reset_to_defaults.grid(row=2, column=0, pady=5)
+        self.center_lower_frame.grid(row=3, column=0, pady=10)
+        self.btn_load.grid(row=0, column=0, pady=10)
+        self.btn_save.grid(row=1, column=0, pady=10)
+        self.btn_reset_to_defaults.grid(row=2, column=0, pady=10)
 
         # right frame
         self.right_frame.grid(row=0, column=2, pady=10, padx=10)
-        self.right_frame_title.grid(row=0, column=0, pady=5)
-        self.compiled_shifts_listbox.grid(row=1, column=0, pady=5)
+        self.right_frame_title.grid(row=0, column=0, pady=10)
+        self.compiled_shifts_listbox.grid(row=1, column=0, pady=10)
 
     def refresh(self) -> None:
         self.destroy()
@@ -1256,6 +1264,7 @@ def save_shifts(
     :return: None
     """
     global shifts_dictionary
+    global shifts_operable_dictionary
     window = widgets[0]
     old_name = window.old_name
     target_index = 0
@@ -1303,6 +1312,7 @@ def save_shifts(
         mute_shifts()
         listbox.delete(target_index, target_index)
         listbox.insert(target_index, f'{name}-Старт в {start}')
+        shifts_operable_dictionary = deepcopy(shifts_dictionary)
         window.destroy()
         return
 
@@ -1361,11 +1371,6 @@ def ensure_save() -> None:
     """
     are you sure to save?
     """
-    global on_vals
-    if any([len(list_of_on_vals) == 0 for list_of_on_vals in on_vals.values()]):
-        messagebox.showwarning(title='Предупреждение',
-                               message='У кого-то нет выходных. У каждого должен быть минимум один вых'
-                                       'Вы можете продолжить, проигнорировав это сообщение')
     context_window = EnsureSaveWindow()
     context_window.mainloop()
 
@@ -1400,13 +1405,6 @@ def mute_weekends(key: str) -> None:
             on_vals[coord.split(';')[1]] = on_vals.get(coord.split(';')[1])
             if value.get() == 'on':
                 on_vals[coord.split(';')[1]].append(value.get())
-        print(on_vals)
-        if any([len(list_of_on_vals) >= 3 for list_of_on_vals in on_vals.values()]):
-            weekends_values[key].deselect()
-            messagebox.showwarning(title='Предупреждение',
-                                   message='Нельзя ставить больше 2-х выходных. '
-                                           'Вы можете продолжить, проигнорировав это сообщение')
-            return
 
     if weekends_values[key].get() == 'off':
         weekends_values[key].select()
@@ -1789,12 +1787,15 @@ def on_closing(window: 'customtkinter.CTk') -> None:
 customtkinter.set_appearance_mode('dark')
 customtkinter.set_default_color_theme('dark-blue')
 
-# authorization window
-auth = AuthorizationWindow()
-auth.protocol("WM_DELETE_WINDOW", lambda: on_closing(auth))
-auth.mainloop()
+# authorization window has been muted at user's request
+# ###
+# auth = AuthorizationWindow()
+# auth.protocol("WM_DELETE_WINDOW", lambda: on_closing(auth))
+# auth.mainloop()
+# ###
+
 # launch app
-if AUTHORIZED:
-    app = App()
-    app.protocol("WM_DELETE_WINDOW", lambda: on_closing(app))
-    app.mainloop()
+#if AUTHORIZED:
+app = App()
+app.protocol("WM_DELETE_WINDOW", lambda: on_closing(app))
+app.mainloop()

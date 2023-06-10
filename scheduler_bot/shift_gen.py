@@ -274,7 +274,7 @@ class Schedule:
         # this algorythm implements the generation method.
         # It would not stop unless all shifts are given away
         # (shifts list is empty).
-        while single_shifts_list:
+        while single_shifts_list or compiled_shifts_list:
             compare_shifts = single_shifts_list[:]
             # shifts assignment process
             for cell, employee, yesterday_cell in zip(cells, employees, prev_day_cells):
@@ -292,8 +292,6 @@ class Schedule:
 
                     if compiled_shifts_list:
                         compiled_choice = choice(compiled_shifts_list)
-                        if compiled_choice.get_begin() not in employee.get_working_hours():
-                            continue
                         cell.rename(compiled_choice)
                         self.sheet[cell.holler_ident()] = cell.get_info().__str__()
                         self.sheet[cell.holler_ident()].alignment = Alignment(
@@ -338,8 +336,9 @@ class Schedule:
                                     break
             # the block below is responsible for comparing if shifts list has changed since last iteration.
             # if there is no change, the bot enters remainders into the Excel
-            if compare_shifts == single_shifts_list:
-                self.sheet[choice(cells).holler_ident()[0] + str(len(self.emps) + 3)] = 'остатки'
+            remnants_indent = len(single_shifts_list)
+            if compare_shifts == single_shifts_list and single_shifts_list:
+                self.sheet[choice(cells).holler_ident()[0] + str(len(self.emps) + 3)] = 'остатки обычных смен'
                 self.sheet[choice(cells).holler_ident()[0] + str(len(self.emps) + 3)].alignment = Alignment(
                                     horizontal='center', vertical='center'
                                 )
@@ -350,6 +349,23 @@ class Schedule:
                                     horizontal='center', vertical='center'
                                 )
                     single_shifts_list.remove(shift)
+
+            # add compiled to remaining (if left)
+            if compiled_shifts_list:
+                self.sheet[choice(cells).holler_ident()[0] + str(len(self.emps) + 5 + remnants_indent)] = 'остатки компонованных смен'
+                self.sheet[choice(cells).holler_ident()[0] + str(len(self.emps) + 5 + remnants_indent)].alignment = Alignment(
+                    horizontal='center', vertical='center'
+                )
+
+                for index, shift in enumerate(compiled_shifts_list):
+                    self.sheet[choice(cells).holler_ident()[0] + str(len(self.emps) + index + 6 + remnants_indent)] = shift.__str__()
+                    self.sheet[choice(cells).holler_ident()[0] + str(len(self.emps) + index + 6 + remnants_indent)].alignment = \
+                        Alignment(
+                            horizontal='center', vertical='center'
+                        )
+                    compiled_shifts_list.remove(shift)
+
+
         # Once the generation is ended, the bot finishes job and writes a table
         if weekday == 7:
             file_name = f'schedule-{self.WEEK[0][0]}-{self.WEEK[0][6]} of {self.WEEK[1][0]} ' \

@@ -1,7 +1,5 @@
 # current version:
-# 1.1.2
+# 1.1.3
 # previous version:
-# 1.1.1
-# Fixed bug that does not flush file after saving, causing changes not to apply unless you reboot
-# next objective:
-# redesign icons and solve further bugs with bot
+# 1.1.2
+# minor bug fixes and icons redesign
